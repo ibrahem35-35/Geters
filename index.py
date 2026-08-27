@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # بيانات GitHub
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = "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"
 
 GITHUB_USERNAME = "ibrahem35-35"
 REPO_NAME = "O.D.H."
