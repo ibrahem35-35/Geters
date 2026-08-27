@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # بيانات GitHub
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = "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"
 
 GITHUB_USERNAME = "ibrahem35-35"
 REPO_NAME = "O.D.H."
@@ -25,8 +25,9 @@ def home():
     url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{REPO_NAME}/contents/{FILE_PATH}"
 
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json"
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
     }
 
     # نشوف الملف موجود ولا لأ
@@ -40,13 +41,14 @@ def home():
 
     if response.status_code == 200:
         sha = response.json()["sha"]
+
     elif response.status_code != 404:
         return f"GitHub GET Error: {response.text}", 500
 
-    # محتوى الملف
+    # تحويل الرقم إلى Base64
     content = base64.b64encode(
-        str(number).encode()
-    ).decode()
+        str(number).encode("utf-8")
+    ).decode("utf-8")
 
     data = {
         "message": f"Update random.txt: {number}",
@@ -54,7 +56,7 @@ def home():
         "branch": BRANCH
     }
 
-    # لو الملف موجود لازم نبعت SHA بتاعه
+    # لو الملف موجود لازم SHA
     if sha:
         data["sha"] = sha
 
