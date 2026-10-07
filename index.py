@@ -123,7 +123,7 @@ def get_images():
     # تجهيز الهيدرز لو اتبعت توكن
     headers = {}
     if auth_token:
-        headers["Authorization"] = f"Bearer {auth_token}"
+        headers["Authorization"] = f"{auth_token}"
 
     try:
         # طلب الـ API الخارجي
