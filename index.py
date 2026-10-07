@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, render_template_string
 import requests
 import random
 import base64
@@ -11,10 +11,8 @@ app = Flask(__name__)
 # =========================
 
 GITHUB_TOKEN = os.getenv("tok")
-
 GITHUB_USERNAME = "ibrahem35-35"
 
-# أسماء الـ Repositories
 REPO_MAIN = "O.D.H."
 REPO_2 = "adm"
 REPO_3 = "taq"
@@ -28,14 +26,11 @@ FILE_PATH = "random.txt"
 # =========================
 
 def update_github_file(repo_name):
-    # التأكد من وجود التوكن
     if not GITHUB_TOKEN:
         return "GitHub token is not configured.", 500
 
-    # توليد رقم عشوائي
     number = random.randint(1, 100000)
 
-    # GitHub API URL
     url = (
         f"https://api.github.com/repos/"
         f"{GITHUB_USERNAME}/{repo_name}/contents/{FILE_PATH}"
@@ -46,10 +41,6 @@ def update_github_file(repo_name):
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28"
     }
-
-    # =========================
-    # الحصول على SHA للملف
-    # =========================
 
     try:
         response = requests.get(
@@ -72,17 +63,9 @@ def update_github_file(repo_name):
     elif response.status_code != 404:
         return f"GitHub GET Error: {response.text}", 500
 
-    # =========================
-    # تحويل الرقم إلى Base64
-    # =========================
-
     content = base64.b64encode(
         str(number).encode("utf-8")
     ).decode("utf-8")
-
-    # =========================
-    # بيانات التعديل / الإنشاء
-    # =========================
 
     data = {
         "message": f"Update random.txt: {number}",
@@ -90,13 +73,8 @@ def update_github_file(repo_name):
         "branch": BRANCH
     }
 
-    # لو الملف موجود لازم SHA
     if sha:
         data["sha"] = sha
-
-    # =========================
-    # إنشاء أو تعديل الملف
-    # =========================
 
     try:
         response = requests.put(
@@ -131,6 +109,51 @@ def homee():
 @app.route("/3")
 def homeee():
     return update_github_file(REPO_3)
+
+
+@app.route("/get-img")
+def get_images():
+    # استخراج الـ Parameters من الطلب
+    target_url = request.args.get("q")
+    auth_token = request.args.get("auth")
+
+    if not target_url:
+        return "Missing 'q' parameter.", 400
+
+    # تجهيز الهيدرز لو اتبعت توكن
+    headers = {}
+    if auth_token:
+        headers["Authorization"] = f"Bearer {auth_token}"
+
+    try:
+        # طلب الـ API الخارجي
+        res = requests.get(target_url, headers=headers, timeout=15)
+        if res.status_code != 200:
+            return f"API Error ({res.status_code}): {res.text}", res.status_code
+
+        data = res.json()
+    except requests.RequestException as e:
+        return f"Request Failed: {str(e)}", 500
+    except ValueError:
+        return "Invalid JSON response from target API.", 500
+
+    # استخراج مصفوفة الأسئلة والروابط
+    questions = data.get("questions", [])
+    img_tags = []
+
+    BASE_IMG_URL = "https://api.bassthalk.com/"
+
+    for item in questions:
+        pic_path = item.get("picture")
+        if pic_path:
+            # دمج الرابط الأساسي مع المسار
+            full_url = f"{BASE_IMG_URL}{pic_path}"
+            img_tags.append(f'<img src="{full_url}" alt="Question Image"><br>')
+
+    # تجميع الـ HTML المرجّع
+    html_content = "\n".join(img_tags) if img_tags else "<p>No images found.</p>"
+
+    return render_template_string(html_content), 200
 
 
 # =========================
